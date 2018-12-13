@@ -22,6 +22,8 @@ but 150KB/4KB/RCU = 37.5 RCU.
 # pk=doc1, sk=na : count=42, done={1,3,5,7,11,13,17,19}
 # TODO: make total_pages an attribute of this item
 
+from pprint import pprint as pp
+
 import boto3
 
 DDB = 'cshenton-schema'
@@ -37,12 +39,20 @@ res = dbt.get_item(Key=pksk, ReturnConsumedCapacity='INDEXES')
 item = res['Item']
 
 
+page = 6
 res = dbt.update_item(
     Key=pksk, ReturnConsumedCapacity='INDEXES', ReturnValues='ALL_NEW',
-    ExpressionAttributeNames={'#count': 'count'},
-    ExpressionAttributeValues={':1': 1, ':mincount': 2},
-    ConditionExpression="(#count > :mincount)",
-    UpdateExpression="SET #count = #count + :1",
+    ExpressionAttributeNames={#'#count': 'count',
+                              '#done': 'done'}, # '#page': 'page'},
+    ExpressionAttributeValues={#':1': 1,
+                               ':page': page,
+                               ':pagelist': set([page])},
+    ConditionExpression="(NOT contains(done, :page))",  # want NOT IN
+    # I can add to the list, or increment the count but not both
+    #UpdateExpression="SET #count = #count + :1, #done = list_append(#done, :pagelist)",
+    UpdateExpression="ADD #done :pagelist"  # , SET #count = #count + :1",
+    #UpdateExpression="SET #count = #count + :1, #done :pagelist"
 )
 # botocore.errorfactory.ConditionalCheckFailedException
 
+pp(res)
