@@ -23,36 +23,69 @@ but 150KB/4KB/RCU = 37.5 RCU.
 # TODO: make total_pages an attribute of this item
 
 from pprint import pprint as pp
+from random import randint
 
 import boto3
 
 DDB = 'cshenton-schema'
-PK = 'doc2'
+PK1 = 'doc1'                    # NS { 1, 2, 3}
+PK2 = 'doc2'                    # L  [ {"S": "42"}, {"S": "6"}]
 SK = 'na'
 
 dbc = boto3.client('dynamodb')
 dbr = boto3.resource('dynamodb')
 dbt = dbr.Table(DDB)
 
-pksk = {'pk': PK, 'sk': SK}
-res = dbt.get_item(Key=pksk, ReturnConsumedCapacity='INDEXES')
+res = dbt.get_item(Key={'pk': 'doc1', 'sk': 'na'}, ReturnConsumedCapacity='INDEXES')
 item = res['Item']
 
+# Can raise botocore.errorfactory.ConditionalCheckFailedException
 
-page = '6'
+page = randint(0, 1000)
+
+
+# try update SN set of numbers
 res = dbt.update_item(
-    Key=pksk, ReturnConsumedCapacity='INDEXES', ReturnValues='ALL_NEW',
-    ExpressionAttributeNames={'#count': 'count',
-                              '#done': 'done'}, # '#page': 'page'},
-    ExpressionAttributeValues={':1': 1,
-                               ':page': page,
-                               ':pagelist': [page]},
-    ConditionExpression="(NOT contains(done, :page))",  # want NOT IN
-    # I can add to the list, or increment the count but not both
-    UpdateExpression="SET #count = #count + :1, done = list_append(#done, :pagelist)",
+    Key={'pk': 'doc1', 'sk': 'na'},
+    ReturnConsumedCapacity='INDEXES', ReturnValues='ALL_NEW',
+    ExpressionAttributeNames={
+        # '#count': 'count',
+        # '#page': 'page'},
+        '#done': 'done',
+    },
+    ExpressionAttributeValues={
+        # ':1': 1,
+        ':page': page,
+        ':pagelist': set([page]),  # set([page])
+    },
+    ConditionExpression="(NOT contains(done, :page))",
+    UpdateExpression="ADD #done :pagelist",
+
+    # I can add to the numset, or increment the count but not both
+    #UpdateExpression="SET #count = #count + :1 ADD #done :page",
+    #UpdateExpression="SET #count = #count + :1, done = list_append(#done, :pagelist)",
     #UpdateExpression="ADD #done :pagelist"  # , SET #count = #count + :1",
     #UpdateExpression="SET #count = #count + :1, #done :pagelist"
 )
-# botocore.errorfactory.ConditionalCheckFailedException
-
+print('rand int page=%s' % page)
 pp(res)
+
+
+
+###############################################################################
+# Show the LIST (of random types) works:
+page_str = str(page)
+res = dbt.update_item(
+    Key={'pk': 'doc2', 'sk': 'na'},
+    ReturnConsumedCapacity='INDEXES', ReturnValues='ALL_NEW',
+    ExpressionAttributeNames={'#count': 'count',
+                              '#done': 'done'},
+    ExpressionAttributeValues={':1': 1,
+                               ':page': str(page),
+                               ':pagelist': [str(page)]},
+    ConditionExpression="(NOT contains(done, :page))",
+    UpdateExpression="SET #count = #count + :1, done = list_append(#done, :pagelist)",
+)
+print('rand str page=%s' % page)
+pp(res)
+# TODO try with list of ints
