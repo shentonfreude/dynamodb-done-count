@@ -27,7 +27,7 @@ from pprint import pprint as pp
 import boto3
 
 DDB = 'cshenton-schema'
-PK = 'doc1'
+PK = 'doc2'
 SK = 'na'
 
 dbc = boto3.client('dynamodb')
@@ -39,18 +39,18 @@ res = dbt.get_item(Key=pksk, ReturnConsumedCapacity='INDEXES')
 item = res['Item']
 
 
-page = 6
+page = '6'
 res = dbt.update_item(
     Key=pksk, ReturnConsumedCapacity='INDEXES', ReturnValues='ALL_NEW',
-    ExpressionAttributeNames={#'#count': 'count',
+    ExpressionAttributeNames={'#count': 'count',
                               '#done': 'done'}, # '#page': 'page'},
-    ExpressionAttributeValues={#':1': 1,
+    ExpressionAttributeValues={':1': 1,
                                ':page': page,
-                               ':pagelist': set([page])},
+                               ':pagelist': [page]},
     ConditionExpression="(NOT contains(done, :page))",  # want NOT IN
     # I can add to the list, or increment the count but not both
-    #UpdateExpression="SET #count = #count + :1, #done = list_append(#done, :pagelist)",
-    UpdateExpression="ADD #done :pagelist"  # , SET #count = #count + :1",
+    UpdateExpression="SET #count = #count + :1, done = list_append(#done, :pagelist)",
+    #UpdateExpression="ADD #done :pagelist"  # , SET #count = #count + :1",
     #UpdateExpression="SET #count = #count + :1, #done :pagelist"
 )
 # botocore.errorfactory.ConditionalCheckFailedException
