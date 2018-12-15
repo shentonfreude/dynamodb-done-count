@@ -59,7 +59,7 @@ res = dbt.update_item(
         ':pagelist': set([page]),  # set([page])
     },
     ConditionExpression="(NOT contains(done, :page))",
-    UpdateExpression="ADD #done :pagelist SET #count = #count + :1",
+    UpdateExpression="ADD #done :pagelist, #count :1",
 
     # I can add to the numset, or increment the count but not both
     #UpdateExpression="SET #count = #count + :1 ADD #done :page",
