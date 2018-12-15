@@ -21,7 +21,8 @@ bytes. 30000 pages * 5 bytes = 150KB. This is within the limit of DDB item size
 but 150KB/4KB/RCU = 37.5 RCU.
 
 For 1000 pages in done (count is off because of initial test data):
-  page=999 count=1000 RCU={'CapacityUnits': 3.0}
+  page=999 count=1000 WCU={'CapacityUnits': 3.0}
+And WCU=6 at 2000 numbers in the done set.
 """
 
 # in AWS_PROFILE=wp-dev
@@ -41,7 +42,7 @@ dbt = dbr.Table(DDB)
 
 # Add to done (SN set of numbers) and increment count
 
-for page in range(1000):
+for page in range(1000,2000):y
     try:
         res = dbt.update_item(
             Key={'pk': 'doc3', 'sk': 'na'},
@@ -59,7 +60,7 @@ for page in range(1000):
             UpdateExpression="ADD #done :pagelist, #count :1",
         )
         print(f'rand int page={page} count={res["Attributes"]["count"]}'
-              f'RCU={res["ConsumedCapacity"]["Table"]}')
+              f' CU={res["ConsumedCapacity"]["Table"]}')
     except ClientError as err:
         if err.response['Error']['Code'] == 'ConditionalCheckFailedException':
             print('Already got page=%s (%s)' % (page, err))
