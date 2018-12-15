@@ -49,17 +49,17 @@ res = dbt.update_item(
     Key={'pk': 'doc1', 'sk': 'na'},
     ReturnConsumedCapacity='INDEXES', ReturnValues='ALL_NEW',
     ExpressionAttributeNames={
-        # '#count': 'count',
+        '#count': 'count',
         # '#page': 'page'},
         '#done': 'done',
     },
     ExpressionAttributeValues={
-        # ':1': 1,
+        ':1': 1,
         ':page': page,
         ':pagelist': set([page]),  # set([page])
     },
     ConditionExpression="(NOT contains(done, :page))",
-    UpdateExpression="ADD #done :pagelist",
+    UpdateExpression="ADD #done :pagelist SET #count = #count + :1",
 
     # I can add to the numset, or increment the count but not both
     #UpdateExpression="SET #count = #count + :1 ADD #done :page",
@@ -70,7 +70,7 @@ res = dbt.update_item(
 print('rand int page=%s' % page)
 pp(res)
 
-
+exit(0)
 
 ###############################################################################
 # Show the LIST (of random types) works:
