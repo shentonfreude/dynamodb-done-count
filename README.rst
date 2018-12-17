@@ -20,12 +20,13 @@ In the pattern we use in this demo, the pages are kept in a Set of
 numbers. We check that the page number doesn't already exists, and add
 our page number to the set. DynamoDB gives us back, for free, a
 *consistent* collection of the new data. This means our submitting
-Lambda gets back the updated count, and it can launch another Lambda
-to (in our case) consolidate all the pages to complete the job. The
-consistency and return are free in the DynamoDB billing model IIRC, so
-it's a win.
+Lambda gets back the updated count, and if it matches the total async
+events we've launched (500, one for each page) it can launch another
+Lambda to -- in our case -- consolidate all the pages to complete the
+job. The consistency and return are free in the DynamoDB billing model
+(IIRC), so it's a win.
 
-DynamoDB bills by read and write "capacity units", where an WCU is 1KB
+DynamoDB is billed by read and write "capacity units", where an WCU is 1KB
 and an eventually-consistent RCU is 4KB. As we add more pages to the
 set of done page numbers, we see the WCU increase from the minimum of
 1, up to 3 for 1000 pages, and 6 for 2000 pages in the set. I don't
@@ -38,4 +39,7 @@ WCU requirements. Typically, we would have to provision a high WCU
 limit to accommodate these spikes. As of November 2018's re:Invent
 announcement, we can now use on-demand pricing which imposes no limit
 (it is about 6.5x more expensive than pre-provisioned limits, but will
-be more cost-efficient for spikey loads like this).
+be more cost-efficient for spikey loads like this). Since we're using
+a single DynamoDB item for this, we are creating a "hot key"; will
+this be a problem in a standalone table? in a large table with many
+other items?
